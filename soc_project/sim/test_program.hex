@@ -1,0 +1,65 @@
+// test_program.hex - Preloaded via $readmemh into imem (soc_top's u_imem)
+// Hand-assembled RV32I machine code. One 32-bit word per line, in
+// program order starting at address 0x00000000.
+//
+// Assembly (for reference):
+//   0x00  lui  x1, 0x10000        # x1 = 0x1000_0000 (DMEM base)
+//   0x04  addi x2, x0, 123        # x2 = 123
+//   0x08  sw   x2, 0(x1)          # DMEM[0] = 123               (SRAM write test)
+//   0x0C  lw   x3, 0(x1)          # x3 = DMEM[0]                (SRAM read test)
+//   0x10  lui  x4, 0x30000        # x4 = 0x3000_0000 (PWM base)
+//   0x14  addi x5, x0, 128        # x5 = 128 (~50% duty)
+//   0x18  sw   x5, 4(x4)          # PWM_DUTY = 128
+//   0x1C  addi x6, x0, 1          # x6 = 1
+//   0x20  sw   x6, 0(x4)          # PWM_CTRL = EN                (PWM enable test)
+//   0x24  lui  x7, 0x30001        # x7 = 0x3000_1000 (SPI base)
+//   0x28  addi x8, x0, 0xA5       # x8 = 0xA5
+//   0x2C  sw   x8, 4(x7)          # SPI_TXDATA = 0xA5
+//   0x30  addi x9, x0, 1          # x9 = 1
+//   0x34  sw   x9, 0(x7)          # SPI_CTRL = START             (SPI transfer test)
+//   0x38  spi_wait:
+//         lw   x10, 12(x7)        # x10 = SPI_STATUS
+//   0x3C  andi x11, x10, 1        # x11 = BUSY bit
+//   0x40  bne  x11, x0, spi_wait  # loop while busy
+//   0x44  lw   x12, 8(x7)         # x12 = SPI_RXDATA
+//   0x48  sw   x12, 4(x1)         # DMEM[1] = SPI_RXDATA         (save for checking)
+//   0x4C  lui  x13, 0x30002       # x13 = 0x3000_2000 (UART base)
+//   0x50  addi x14, x0, 3         # x14 = 3 (TX_EN | RX_EN)
+//   0x54  sw   x14, 0(x13)        # UART_CTRL = enable
+//   0x58  addi x15, x0, 0x41      # x15 = 'A'
+//   0x5C  sw   x15, 4(x13)        # UART_TXDATA = 'A'            (UART transmit test)
+//   0x60  uart_wait:
+//         lw   x16, 12(x13)       # x16 = UART_STATUS
+//   0x64  andi x17, x16, 1        # x17 = TX_BUSY bit
+//   0x68  bne  x17, x0, uart_wait # loop while busy
+//   0x6C  halt:
+//         jal  x0, halt           # infinite self-loop
+
+100000B7  // lui  x1, 0x10000
+07B00113  // addi x2, x0, 123
+0020A023  // sw   x2, 0(x1)
+0000A183  // lw   x3, 0(x1)
+30000237  // lui  x4, 0x30000
+08000293  // addi x5, x0, 128
+00522223  // sw   x5, 4(x4)
+00100313  // addi x6, x0, 1
+00622023  // sw   x6, 0(x4)
+300013B7  // lui  x7, 0x30001
+0A500413  // addi x8, x0, 0xA5
+0083A223  // sw   x8, 4(x7)
+00100493  // addi x9, x0, 1
+0093A023  // sw   x9, 0(x7)
+00C3A503  // spi_wait: lw x10, 12(x7)
+00157593  // andi x11, x10, 1
+FE059CE3  // bne  x11, x0, spi_wait
+0083A603  // lw   x12, 8(x7)
+00C0A223  // sw   x12, 4(x1)
+300026B7  // lui  x13, 0x30002
+00300713  // addi x14, x0, 3
+0086A023  // sw   x14, 0(x13)
+04100793  // addi x15, x0, 0x41
+0096A223  // sw   x15, 4(x13)
+0086A803  // uart_wait: lw x16, 12(x13)
+00187893  // andi x17, x16, 1
+FE089CE3  // bne  x17, x0, uart_wait
+0000006F  // halt: jal x0, halt
